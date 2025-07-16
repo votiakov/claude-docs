@@ -32,29 +32,29 @@ if [ ! -d ".git" ]; then
     exit 1
 fi
 
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# GitHub repository details
+GITHUB_REPO="https://raw.githubusercontent.com/votiakov/claude-docs/main"
 
 print_status "Creating Claude command directories..."
 mkdir -p .claude/commands .claude/hooks
 
-print_status "Copying command files..."
-cp "$SCRIPT_DIR/.claude/commands/init-ai-docs.md" .claude/commands/
-cp "$SCRIPT_DIR/.claude/commands/update-ai-docs.md" .claude/commands/
+print_status "Downloading command files..."
+curl -sSL "$GITHUB_REPO/.claude/commands/init-ai-docs.md" -o .claude/commands/init-ai-docs.md
+curl -sSL "$GITHUB_REPO/.claude/commands/update-ai-docs.md" -o .claude/commands/update-ai-docs.md
 
-print_status "Copying hook scripts..."
-cp "$SCRIPT_DIR/.claude/hooks/update-docs.sh" .claude/hooks/
-cp "$SCRIPT_DIR/.claude/hooks/commit-docs.sh" .claude/hooks/
+print_status "Downloading hook scripts..."
+curl -sSL "$GITHUB_REPO/.claude/hooks/update-docs.sh" -o .claude/hooks/update-docs.sh
+curl -sSL "$GITHUB_REPO/.claude/hooks/commit-docs.sh" -o .claude/hooks/commit-docs.sh
 
 print_status "Making hooks executable..."
 chmod +x .claude/hooks/*.sh
 
-print_status "Copying settings.json..."
+print_status "Downloading settings.json..."
 if [ -f ".claude/settings.json" ]; then
     print_warning "settings.json already exists. Creating backup..."
     cp .claude/settings.json .claude/settings.json.backup
 fi
-cp "$SCRIPT_DIR/.claude/settings.json" .claude/settings.json
+curl -sSL "$GITHUB_REPO/.claude/settings.json" -o .claude/settings.json
 
 print_status "Setting up git hooks..."
 if [ -f ".git/hooks/pre-push" ]; then
@@ -87,7 +87,7 @@ if [ -f ".github/workflows/update-ai-docs.yml" ]; then
     cp .github/workflows/update-ai-docs.yml .github/workflows/update-ai-docs.yml.backup
 fi
 
-cp "$SCRIPT_DIR/templates/update-ai-docs.yml" .github/workflows/
+curl -sSL "$GITHUB_REPO/templates/update-ai-docs.yml" -o .github/workflows/update-ai-docs.yml
 
 print_status "Updating package.json with documentation scripts..."
 if [ -f "package.json" ]; then

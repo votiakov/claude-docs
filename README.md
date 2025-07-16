@@ -14,26 +14,32 @@ A comprehensive framework for generating and maintaining AI-optimized documentat
 
 ## Quick Start
 
-### Installation
+### One-Line Installation
 
 ```bash
-# Clone this repository or download the files
-git clone https://github.com/yourusername/claude-ai-docs-framework.git
-cd claude-ai-docs-framework
-
-# Navigate to your project directory
-cd /path/to/your/project
-
-# Run the installation script
-curl -sSL https://raw.githubusercontent.com/yourusername/claude-ai-docs-framework/main/install.sh | bash
+# Run this in your project directory
+curl -sSL https://raw.githubusercontent.com/votiakov/claude-docs/main/install.sh | bash
 ```
 
-### Or Manual Installation
+### Manual Installation
 
 ```bash
 # In your project directory
-curl -sSL https://raw.githubusercontent.com/yourusername/claude-ai-docs-framework/main/install.sh -o install.sh
+curl -sSL https://raw.githubusercontent.com/votiakov/claude-docs/main/install.sh -o install.sh
 chmod +x install.sh
+./install.sh
+```
+
+### From Source
+
+```bash
+# Clone this repository
+git clone https://github.com/votiakov/claude-docs.git
+cd claude-docs
+
+# Copy install.sh to your project and run it
+cp install.sh /path/to/your/project/
+cd /path/to/your/project
 ./install.sh
 ```
 
@@ -123,6 +129,20 @@ jobs:
       - name: Update AI Docs
         run: |
           npx claude -p "Run /project:update-ai-docs to update documentation"
+```
+
+## Quick Example
+
+```bash
+# 1. Install the framework in your project directory
+curl -sSL https://raw.githubusercontent.com/votiakov/claude-docs/main/install.sh | bash
+
+# 2. Initialize documentation
+claude -p "Run /project:init-ai-docs"
+
+# 3. Your ai_docs/ folder is now populated with comprehensive documentation!
+ls ai_docs/
+# README.md  project_context.md  architecture/  features/  api/  setup/  troubleshooting/  code_patterns/
 ```
 
 ## Configuration
