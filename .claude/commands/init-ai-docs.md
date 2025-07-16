@@ -4,23 +4,36 @@ Initialize comprehensive AI-optimized documentation for the project.
 
 ## Workflow
 
-1. Create the ai_docs directory structure:
-   - ai_docs/
-   - ai_docs/architecture/
-   - ai_docs/features/
-   - ai_docs/api/
-   - ai_docs/setup/
-   - ai_docs/troubleshooting/
-   - ai_docs/code_patterns/
+1. Assess codebase size and create the ai_docs directory structure:
+   - Check total file count and project complexity
+   - For large codebases (>500 files): Use 5-7 parallel agents
+   - For medium codebases (100-500 files): Use 3-5 parallel agents
+   - For small codebases (<100 files): Use 2-3 parallel agents
+   - Create directory structure:
+     - ai_docs/
+     - ai_docs/architecture/
+     - ai_docs/features/
+     - ai_docs/api/
+     - ai_docs/setup/
+     - ai_docs/troubleshooting/
+     - ai_docs/code_patterns/
 
-2. Analyze the entire codebase to understand:
-   - Project structure and main components
-   - Technology stack and dependencies
-   - Key features and functionality
-   - API endpoints and data models
-   - Common patterns and conventions
+2. Analyze the entire codebase using parallel sub-agents for efficiency:
+   - Use Task tool to launch multiple agents simultaneously for different analysis areas
+   - Agent 1: Analyze project structure, main components, and file organization
+   - Agent 2: Identify technology stack, dependencies, and build configuration
+   - Agent 3: Discover key features and functionality patterns
+   - Agent 4: Map API endpoints, data models, and external integrations
+   - Agent 5: Extract common patterns, conventions, and architectural decisions
 
-3. Generate comprehensive documentation:
+3. Generate comprehensive documentation using parallel sub-agents for different sections:
+   - Use Task tool to create documentation sections simultaneously (launch 3-5 agents)
+   - Agent A: Create project_context.md, architecture/overview.md, and architecture/tech_stack.md
+   - Agent B: Generate all API documentation (endpoints.md, schemas.md, examples.md)
+   - Agent C: Create setup documentation (installation.md, configuration.md) and troubleshooting
+   - Agent D: Generate feature documentation for each major feature found
+   - Agent E: Create code patterns and conventions documentation
+   - Coordinate between agents to ensure consistency and cross-references
 
    **ai_docs/README.md:**
    - Overview of the AI documentation structure
@@ -155,5 +168,11 @@ Initialize comprehensive AI-optimized documentation for the project.
    fi
    ```
 
+## Performance Notes
+- Always use parallel Task agents for large codebases to maximize efficiency
+- Launch multiple agents simultaneously in a single response for optimal performance
+- Coordinate agent outputs to ensure consistency and avoid duplication
+- Use the most appropriate number of agents based on codebase size assessment
+
 ## Usage
-Run: `/project:init-ai-docs`
+Run: `/init-ai-docs`

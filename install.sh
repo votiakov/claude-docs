@@ -69,7 +69,7 @@ cat > .git/hooks/pre-push << 'EOF'
 if git diff --cached --name-only | grep -E '\.(js|ts|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h)$'; then
     echo "Updating AI documentation before push..."
     if command -v claude >/dev/null 2>&1; then
-        claude -p "Run /project:update-ai-docs" || echo "Failed to update docs"
+        claude -p "Run /update-ai-docs" || echo "Failed to update docs"
         git add ai_docs/ 2>/dev/null || true
         git commit -m "docs: Auto-update AI documentation" || true
     else
@@ -97,8 +97,8 @@ const fs = require('fs');
 try {
     const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
     pkg.scripts = pkg.scripts || {};
-    pkg.scripts['docs:init'] = "claude -p 'Run /project:init-ai-docs'";
-    pkg.scripts['docs:update'] = "claude -p 'Run /project:update-ai-docs'";
+    pkg.scripts['docs:init'] = "claude -p 'Run /init-ai-docs'";
+    pkg.scripts['docs:update'] = "claude -p 'Run /update-ai-docs'";
     pkg.scripts['docs:lint'] = "markdownlint ai_docs/**/*.md";
     fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
     console.log('✅ Updated package.json with documentation scripts');
@@ -119,8 +119,8 @@ if [ -f "CLAUDE.md" ]; then
         echo "This project uses AI-optimized documentation stored in \`ai_docs/\`." >> CLAUDE.md
         echo "" >> CLAUDE.md
         echo "### Quick Commands" >> CLAUDE.md
-        echo "- \`/project:init-ai-docs\` - Initialize documentation (first time only)" >> CLAUDE.md
-        echo "- \`/project:update-ai-docs\` - Update documentation after code changes" >> CLAUDE.md
+        echo "- \`/init-ai-docs\` - Initialize documentation (first time only)" >> CLAUDE.md
+        echo "- \`/update-ai-docs\` - Update documentation after code changes" >> CLAUDE.md
         echo "" >> CLAUDE.md
         echo "### Automation" >> CLAUDE.md
         echo "- Documentation auto-updates on push to main branch" >> CLAUDE.md
@@ -149,8 +149,8 @@ else
 This project uses AI-optimized documentation stored in `ai_docs/`.
 
 ### Quick Commands
-- `/project:init-ai-docs` - Initialize documentation (first time only)
-- `/project:update-ai-docs` - Update documentation after code changes
+- `/init-ai-docs` - Initialize documentation (first time only)
+- `/update-ai-docs` - Update documentation after code changes
 
 ### Automation
 - Documentation auto-updates on push to main branch
@@ -171,13 +171,13 @@ fi
 print_status "✅ Installation complete!"
 echo ""
 echo "🎉 Next steps:"
-echo "1. Run: claude -p 'Run /project:init-ai-docs' to initialize documentation"
+echo "1. Run: claude -p 'Run /init-ai-docs' to initialize documentation"
 echo "2. Verify installation: ls -la .claude/"
 echo "3. Check your first AI documentation: cat ai_docs/README.md"
 echo ""
 echo "📚 Available commands:"
-echo "- claude -p 'Run /project:init-ai-docs'     # Initialize documentation"
-echo "- claude -p 'Run /project:update-ai-docs'  # Update documentation"
+echo "- claude -p 'Run /init-ai-docs'     # Initialize documentation"
+echo "- claude -p 'Run /update-ai-docs'  # Update documentation"
 echo "- npm run docs:init                        # Alternative npm script"
 echo "- npm run docs:update                      # Alternative npm script"
 echo ""

@@ -47,7 +47,7 @@ cd /path/to/your/project
 
 ```bash
 # Initialize your project's AI documentation
-claude -p "Run /project:init-ai-docs"
+claude -p "Run /init-ai-docs"
 
 # Or using npm script
 npm run docs:init
@@ -89,17 +89,17 @@ ai_docs/
 
 | Command | Description |
 |---------|-------------|
-| `/project:init-ai-docs` | Initialize documentation (first time only) |
-| `/project:update-ai-docs` | Update documentation after code changes |
-| `/project:update-ai-docs api/users` | Update specific feature documentation |
+| `/init-ai-docs` | Initialize documentation (first time only) |
+| `/update-ai-docs` | Update documentation after code changes |
+| `/update-ai-docs api/users` | Update specific feature documentation |
 
 ### NPM Scripts
 
 ```json
 {
   "scripts": {
-    "docs:init": "claude -p 'Run /project:init-ai-docs'",
-    "docs:update": "claude -p 'Run /project:update-ai-docs'",
+    "docs:init": "claude -p 'Run /init-ai-docs'",
+    "docs:update": "claude -p 'Run /update-ai-docs'",
     "docs:lint": "markdownlint ai_docs/**/*.md"
   }
 }
@@ -128,7 +128,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Update AI Docs
         run: |
-          npx claude -p "Run /project:update-ai-docs to update documentation"
+          npx claude -p "Run /update-ai-docs to update documentation"
 ```
 
 ## Quick Example
@@ -138,7 +138,7 @@ jobs:
 curl -sSL https://raw.githubusercontent.com/votiakov/claude-docs/main/install.sh | bash
 
 # 2. Initialize documentation
-claude -p "Run /project:init-ai-docs"
+claude -p "Run /init-ai-docs"
 
 # 3. Your ai_docs/ folder is now populated with comprehensive documentation!
 ls ai_docs/
@@ -194,7 +194,7 @@ The framework monitors these file extensions for changes:
 claude -p "Update AI documentation for these modified files: src/auth.js src/api.js"
 
 # Update specific sections
-claude -p "Run /project:update-ai-docs features/authentication"
+claude -p "Run /update-ai-docs features/authentication"
 ```
 
 ### Troubleshooting

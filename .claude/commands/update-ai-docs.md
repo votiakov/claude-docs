@@ -44,4 +44,4 @@ Update existing AI documentation based on code changes.
 - $ARGUMENTS: Specific paths or features to update (optional)
 
 ## Usage
-Run: `/project:update-ai-docs` or `/project:update-ai-docs api/users`
+Run: `/update-ai-docs` or `/update-ai-docs api/users`
