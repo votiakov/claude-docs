@@ -1,0 +1,79 @@
+name: Update AI Documentation
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+    types: [closed]
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+        
+      - name: Install dependencies
+        run: npm ci
+        continue-on-error: true
+      
+      - name: Install Claude CLI
+        run: npm install -g @anthropic-ai/claude-cli
+        
+      - name: Update AI Documentation
+        run: |
+          # Check if ai_docs directory exists
+          if [ ! -d "ai_docs" ]; then
+            echo "Initializing AI documentation..."
+            claude -p "Run /project:init-ai-docs"
+          else
+            echo "Updating AI documentation..."
+            claude -p "Run /project:update-ai-docs"
+          fi
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        continue-on-error: true
+      
+      - name: Check for documentation changes
+        id: check-changes
+        run: |
+          if git diff --quiet ai_docs/; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Commit documentation updates
+        if: steps.check-changes.outputs.changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add ai_docs/
+          git commit -m "docs: Update AI documentation [skip ci]"
+      
+      - name: Push changes
+        if: steps.check-changes.outputs.changes == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+      
+      - name: Create summary
+        if: steps.check-changes.outputs.changes == 'true'
+        run: |
+          echo "## 📚 AI Documentation Updated" >> $GITHUB_STEP_SUMMARY
+          echo "The AI documentation has been automatically updated based on code changes." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Changed Files:" >> $GITHUB_STEP_SUMMARY
+          git diff --name-only HEAD~1 ai_docs/ | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY

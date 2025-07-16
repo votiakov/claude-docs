@@ -1,0 +1,21 @@
+{
+  "hooks": [
+    {
+      "event": "PostToolUse",
+      "script": ".claude/hooks/update-docs.sh",
+      "description": "Update AI docs after file modifications",
+      "condition": "tool.name === 'str_replace' || tool.name === 'write_file'"
+    },
+    {
+      "event": "Stop",
+      "script": ".claude/hooks/commit-docs.sh",
+      "description": "Commit documentation updates",
+      "condition": "filesModified > 0"
+    }
+  ],
+  "projectSettings": {
+    "aiDocsEnabled": true,
+    "autoUpdateDocs": true,
+    "documentationPaths": ["ai_docs/"]
+  }
+}
