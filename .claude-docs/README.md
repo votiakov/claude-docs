@@ -81,9 +81,13 @@ If documentation updates aren't working as expected:
 ## Important Technical Notes
 
 ### Permission Modes
-The framework uses `--permission-mode acceptEdits` instead of `-p` (print mode) to ensure Claude can actually write files. The `-p` flag only returns text output and cannot execute tools like Edit/Write.
+The framework uses `--permission-mode acceptEdits --print` to combine:
+- `--permission-mode acceptEdits`: Allows Claude to execute Edit/Write tools
+- `--print`: Runs in non-interactive mode (one-shot execution)
+
+This ensures Claude can actually write files while running non-interactively in git hooks.
 
 ### Hook Architecture
-Git hooks run in non-interactive environments, so they must use explicit permission modes. The framework automatically handles this by using `--permission-mode acceptEdits` in all automated commands.
+Git hooks run in non-interactive environments, so they must use explicit permission modes. The framework automatically handles this by using `--permission-mode acceptEdits --print` in all automated commands.
 
 This directory should not be modified manually unless you're contributing to the framework itself.

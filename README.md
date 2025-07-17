@@ -47,7 +47,7 @@ cd /path/to/your/project
 
 ```bash
 # Initialize your project's AI documentation
-claude --permission-mode acceptEdits "Run /init-ai-docs"
+claude --permission-mode acceptEdits --print "Run /init-ai-docs"
 
 # Or using npm script
 npm run docs:init
@@ -98,8 +98,8 @@ ai_docs/
 ```json
 {
   "scripts": {
-    "docs:init": "claude --permission-mode acceptEdits 'Run /init-ai-docs'",
-    "docs:update": "claude --permission-mode acceptEdits 'Run /update-ai-docs'",
+    "docs:init": "claude --permission-mode acceptEdits --print 'Run /init-ai-docs'",
+    "docs:update": "claude --permission-mode acceptEdits --print 'Run /update-ai-docs'",
     "docs:lint": "markdownlint ai_docs/**/*.md"
   }
 }
@@ -128,7 +128,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Update AI Docs
         run: |
-          npx claude --permission-mode acceptEdits "Run /update-ai-docs to update documentation"
+          npx claude --permission-mode acceptEdits --print "Run /update-ai-docs to update documentation"
 ```
 
 ## Quick Example
@@ -141,7 +141,7 @@ curl -sSL https://raw.githubusercontent.com/votiakov/claude-docs/main/install.sh
 # Edit .claude-docs/config.json to match your project structure
 
 # 3. Initialize documentation
-claude --permission-mode acceptEdits "Run /init-ai-docs"
+claude --permission-mode acceptEdits --print "Run /init-ai-docs"
 
 # 4. Your ai_docs/ folder is now populated with comprehensive documentation!
 ls ai_docs/
@@ -237,10 +237,10 @@ The framework monitors these file extensions for changes:
 
 ```bash
 # Update documentation for specific files
-claude --permission-mode acceptEdits "Update AI documentation for these modified files: src/auth.js src/api.js"
+claude --permission-mode acceptEdits --print "Update AI documentation for these modified files: src/auth.js src/api.js"
 
 # Update specific sections
-claude --permission-mode acceptEdits "Run /update-ai-docs features/authentication"
+claude --permission-mode acceptEdits --print "Run /update-ai-docs features/authentication"
 ```
 
 ### Troubleshooting

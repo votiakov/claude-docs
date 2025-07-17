@@ -86,11 +86,11 @@ if echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/de
     # Check if ai_docs directory exists
     if [ ! -d "ai_docs" ]; then
         info_log "ai_docs/ directory not found. Initializing documentation..."
-        debug_log "Running: claude --permission-mode acceptEdits 'Run /init-ai-docs'"
-        if claude --permission-mode acceptEdits "Run /init-ai-docs" 2>&1; then
+        debug_log "Running: claude --permission-mode acceptEdits --print 'Run /init-ai-docs'"
+        if claude --permission-mode acceptEdits --print "Run /init-ai-docs" 2>&1; then
             info_log "Documentation initialized successfully."
         else
-            error_log "Failed to initialize documentation. Please run 'claude --permission-mode acceptEdits \"Run /init-ai-docs\"' manually."
+            error_log "Failed to initialize documentation. Please run 'claude --permission-mode acceptEdits --print \"Run /init-ai-docs\"' manually."
             exit 1
         fi
     else
@@ -107,10 +107,10 @@ if echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/de
     
     # Run the documentation update command
     info_log "Running documentation update for files: $RELEVANT_FILES"
-    debug_log "Command: claude --permission-mode acceptEdits \"Run /update-ai-docs --changed-files='$RELEVANT_FILES'\""
+    debug_log "Command: claude --permission-mode acceptEdits --print \"Run /update-ai-docs --changed-files='$RELEVANT_FILES'\""
     
     # Run claude with timeout to prevent hanging
-    if timeout 300 claude --permission-mode acceptEdits "Run /update-ai-docs --changed-files='$RELEVANT_FILES'" 2>&1; then
+    if timeout 300 claude --permission-mode acceptEdits --print "Run /update-ai-docs --changed-files='$RELEVANT_FILES'" 2>&1; then
         debug_log "Documentation update command completed successfully"
     else
         error_log "Documentation update command failed or timed out (5 minutes)"

@@ -265,8 +265,8 @@ const fs = require('fs');
 try {
     const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
     pkg.scripts = pkg.scripts || {};
-    pkg.scripts['docs:init'] = "claude --permission-mode acceptEdits 'Run /init-ai-docs'";
-    pkg.scripts['docs:update'] = "claude --permission-mode acceptEdits 'Run /update-ai-docs'";
+    pkg.scripts['docs:init'] = "claude --permission-mode acceptEdits --print 'Run /init-ai-docs'";
+    pkg.scripts['docs:update'] = "claude --permission-mode acceptEdits --print 'Run /update-ai-docs'";
     pkg.scripts['docs:lint'] = "markdownlint ai_docs/**/*.md";
     fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
     console.log('✅ Updated package.json with documentation scripts');
@@ -340,14 +340,14 @@ print_status "✅ Installation complete!"
 echo ""
 echo "🎉 Next steps:"
 echo "1. Review and customize: .claude-docs/config.json (optional but recommended)"
-echo "2. Run: claude --permission-mode acceptEdits 'Run /init-ai-docs' to initialize documentation"
+echo "2. Run: claude --permission-mode acceptEdits --print 'Run /init-ai-docs' to initialize documentation"
 echo "3. Verify installation: ls -la .claude/ .claude-docs/"
 echo "4. Check your first AI documentation: cat ai_docs/README.md"
 echo "5. Manage hooks: ./.claude-docs/manage-hooks.sh status"
 echo ""
 echo "📚 Available commands:"
-echo "- claude --permission-mode acceptEdits 'Run /init-ai-docs'     # Initialize documentation"
-echo "- claude --permission-mode acceptEdits 'Run /update-ai-docs'  # Update documentation"
+echo "- claude --permission-mode acceptEdits --print 'Run /init-ai-docs'     # Initialize documentation"
+echo "- claude --permission-mode acceptEdits --print 'Run /update-ai-docs'  # Update documentation"
 echo "- npm run docs:init                        # Alternative npm script"
 echo "- npm run docs:update                      # Alternative npm script"
 echo ""

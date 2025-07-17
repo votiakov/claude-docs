@@ -150,6 +150,6 @@ RESULT: File is modified on disk
 - Specific files show modifications when checked
 
 ## Usage Examples
-- `claude --permission-mode acceptEdits "Run /update-ai-docs --changed-files='src/api/users.js,src/components/UserList.jsx'"` (incremental)
-- `claude --permission-mode acceptEdits "Run /update-ai-docs api/users"` (manual feature update)
-- `claude --permission-mode acceptEdits "Run /update-ai-docs"` (full analysis - fallback mode)
+- `claude --permission-mode acceptEdits --print "Run /update-ai-docs --changed-files='src/api/users.js,src/components/UserList.jsx'"` (incremental)
+- `claude --permission-mode acceptEdits --print "Run /update-ai-docs api/users"` (manual feature update)
+- `claude --permission-mode acceptEdits --print "Run /update-ai-docs"` (full analysis - fallback mode)
