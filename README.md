@@ -138,7 +138,7 @@ jobs:
 curl -sSL https://raw.githubusercontent.com/votiakov/claude-docs/main/install.sh | bash
 
 # 2. Customize configuration (optional but recommended)
-# Edit .claude/ai-docs-config.json to match your project structure
+# Edit .claude-docs/config.json to match your project structure
 
 # 3. Initialize documentation
 claude -p "Run /init-ai-docs"
@@ -152,14 +152,15 @@ ls ai_docs/
 
 ### Project Configuration
 
-After installation, customize `.claude/ai-docs-config.json` to match your project:
+After installation, customize `.claude-docs/config.json` to match your project:
 
 ```json
 {
   "sourceDirectories": ["src/", "lib/", "components/"],
   "fileExtensions": [".js", ".ts", ".jsx", ".tsx"],
   "ignorePatterns": ["node_modules/", "dist/", "build/", ".git/"],
-  "framework": "react-typescript"
+  "framework": "react-typescript",
+  "enabled": true
 }
 ```
 
@@ -168,6 +169,7 @@ After installation, customize `.claude/ai-docs-config.json` to match your projec
 - `fileExtensions`: File types to monitor for changes
 - `ignorePatterns`: Directories/files to ignore during analysis
 - `framework`: Detected framework for context-aware documentation
+- `enabled`: Whether the framework is active (managed by hooks)
 
 **Note:** If this config file doesn't exist, the framework uses generic fallbacks covering most common project structures.
 
@@ -187,6 +189,30 @@ The framework sets up intelligent git hooks that use your configuration:
 - Uses same configuration to detect relevant changes
 - Prevents push if documentation is out of sync
 - Ensures documentation is always up to date before sharing
+
+### Hook Management
+
+The framework includes a powerful hook management system:
+
+```bash
+# Check current status
+./.claude-docs/manage-hooks.sh status
+
+# Enable git hooks
+./.claude-docs/manage-hooks.sh enable
+
+# Disable git hooks (restores backups)
+./.claude-docs/manage-hooks.sh disable
+
+# Reinstall hooks (useful after updates)
+./.claude-docs/manage-hooks.sh reinstall
+```
+
+**Features:**
+- Automatic backup and restoration of existing hooks
+- Configuration-aware hook installation
+- Easy enable/disable functionality
+- Status checking with detailed information
 
 ### Supported File Types
 
@@ -222,10 +248,10 @@ claude -p "Run /update-ai-docs features/authentication"
 #### Common Issues
 
 **Q: Documentation not updating automatically**
-A: Check that git hooks are properly installed and executable:
+A: Check git hooks status and reinstall if needed:
 ```bash
-ls -la .git/hooks/pre-push
-chmod +x .git/hooks/pre-push
+./.claude-docs/manage-hooks.sh status
+./.claude-docs/manage-hooks.sh reinstall
 ```
 
 **Q: Claude commands not found**
@@ -248,8 +274,13 @@ your-project/
 │   ├── commands/
 │   │   ├── init-ai-docs.md
 │   │   └── update-ai-docs.md
-│   ├── ai-docs-config.json      # ← Project-specific configuration
 │   └── settings.json
+├── .claude-docs/                # ← Framework files
+│   ├── config.json             # ← Project-specific configuration
+│   ├── manage-hooks.sh         # ← Hook management script
+│   └── hooks/
+│       ├── post-commit         # ← Hook templates
+│       └── pre-push
 ├── .github/
 │   └── workflows/
 │       └── update-ai-docs.yml

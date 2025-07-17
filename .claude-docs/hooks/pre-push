@@ -1,0 +1,63 @@
+#!/bin/sh
+# AI Documentation Framework - Pre-push Hook
+# Fallback: Update AI docs before push if not already done
+
+# Read AI docs configuration
+if [ -f ".claude-docs/config.json" ]; then
+    SOURCE_DIRS=$(python3 -c "
+import json
+try:
+    with open('.claude-docs/config.json', 'r') as f:
+        config = json.load(f)
+    dirs = config.get('sourceDirectories', ['src/', 'lib/'])
+    print('|'.join([d.rstrip('/') + '/' for d in dirs]))
+except:
+    print('src/|lib/')
+" 2>/dev/null || echo "src/|lib/")
+    
+    FILE_EXTENSIONS=$(python3 -c "
+import json
+try:
+    with open('.claude-docs/config.json', 'r') as f:
+        config = json.load(f)
+    exts = config.get('fileExtensions', ['.js', '.ts', '.py'])
+    print('|'.join([ext.lstrip('.') for ext in exts]))
+except:
+    print('js|ts|py')
+" 2>/dev/null || echo "js|ts|py")
+
+    # Check if framework is enabled
+    ENABLED=$(python3 -c "
+import json
+try:
+    with open('.claude-docs/config.json', 'r') as f:
+        config = json.load(f)
+    print('true' if config.get('enabled', True) else 'false')
+except:
+    print('true')
+" 2>/dev/null || echo "true")
+
+    if [ "$ENABLED" != "true" ]; then
+        echo "AI documentation framework is disabled. Skipping documentation check."
+        exit 0
+    fi
+else
+    # Fallback to generic defaults (covers most common scenarios)
+    SOURCE_DIRS="src/|lib/|app/|components/|pages/|utils/|helpers/|modules/|packages/"
+    FILE_EXTENSIONS="js|ts|jsx|tsx|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h|vue|svelte"
+fi
+
+# Check if docs are up to date
+if [ -z "$(git log --oneline -1 | grep 'docs: Auto-update AI documentation')" ]; then
+    if git diff --name-only HEAD~5..HEAD | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/dev/null 2>&1; then
+        echo "Source files were modified recently but docs may not be up to date. Updating..."
+        if command -v claude >/dev/null 2>&1; then
+            RECENT_FILES=$(git diff --name-only HEAD~5..HEAD | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" | tr '\n' ',' | sed 's/,$//')
+            claude -p "Run /update-ai-docs --changed-files='$RECENT_FILES'" || echo "Failed to update docs"
+            if [ -n "$(git status --porcelain ai_docs/)" ]; then
+                echo "Documentation was updated. Please commit and push again."
+                exit 1
+            fi
+        fi
+    fi
+fi

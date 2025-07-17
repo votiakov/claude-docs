@@ -5,7 +5,7 @@ Update existing AI documentation based on code changes with intelligent incremen
 ## Workflow
 
 1. **Load project configuration**:
-   - Read `.claude/ai-docs-config.json` to understand project structure
+   - Read `.claude-docs/config.json` to understand project structure
    - Get source directories, file extensions, and framework information
    - If config doesn't exist, use generic fallback patterns for common frameworks
 

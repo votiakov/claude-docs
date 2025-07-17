@@ -1,0 +1,25 @@
+{
+  "sourceDirectories": [
+    "src/",
+    "lib/"
+  ],
+  "fileExtensions": [
+    ".js",
+    ".ts",
+    ".py"
+  ],
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    "build/",
+    ".git/",
+    "target/",
+    "__pycache__/",
+    ".next/",
+    ".nuxt/",
+    "vendor/",
+    "coverage/"
+  ],
+  "framework": "unknown",
+  "enabled": true
+}

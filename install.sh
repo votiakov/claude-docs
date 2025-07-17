@@ -38,9 +38,18 @@ GITHUB_REPO="https://raw.githubusercontent.com/votiakov/claude-docs/main"
 print_status "Creating Claude command directories..."
 mkdir -p .claude/commands
 
+print_status "Creating .claude-docs framework directory..."
+mkdir -p .claude-docs/hooks
+
 print_status "Downloading command files..."
 curl -sSL "$GITHUB_REPO/.claude/commands/init-ai-docs.md" -o .claude/commands/init-ai-docs.md
 curl -sSL "$GITHUB_REPO/.claude/commands/update-ai-docs.md" -o .claude/commands/update-ai-docs.md
+
+print_status "Downloading framework files..."
+curl -sSL "$GITHUB_REPO/.claude-docs/hooks/post-commit" -o .claude-docs/hooks/post-commit
+curl -sSL "$GITHUB_REPO/.claude-docs/hooks/pre-push" -o .claude-docs/hooks/pre-push
+curl -sSL "$GITHUB_REPO/.claude-docs/manage-hooks.sh" -o .claude-docs/manage-hooks.sh
+chmod +x .claude-docs/manage-hooks.sh
 
 print_status "Detecting project structure..."
 
@@ -209,17 +218,18 @@ print_status "Source directories: $SOURCE_DIRS"
 print_status "File extensions: $FILE_EXTENSIONS"
 
 # Generate AI docs configuration with detected defaults
-cat > .claude/ai-docs-config.json << EOF
+cat > .claude-docs/config.json << EOF
 {
   "sourceDirectories": [$(echo "$SOURCE_DIRS" | sed 's/[^ ]*/\"&\"/g' | sed 's/ /,/g' | sed 's/,$//g')],
   "fileExtensions": [$(echo "$FILE_EXTENSIONS" | sed 's/[^ ]*/\"&\"/g' | sed 's/ /,/g' | sed 's/,$//g')],
   "ignorePatterns": ["node_modules/", "dist/", "build/", ".git/", "target/", "__pycache__/", ".next/", ".nuxt/", "vendor/", "coverage/"],
-  "framework": "$FRAMEWORK"
+  "framework": "$FRAMEWORK",
+  "enabled": true
 }
 EOF
 
-print_status "Generated .claude/ai-docs-config.json with detected settings"
-print_warning "Please review and customize .claude/ai-docs-config.json to match your project structure"
+print_status "Generated .claude-docs/config.json with detected settings"
+print_warning "Please review and customize .claude-docs/config.json to match your project structure"
 
 print_status "Downloading settings.json..."
 if [ -f ".claude/settings.json" ]; then
@@ -228,134 +238,15 @@ if [ -f ".claude/settings.json" ]; then
 fi
 curl -sSL "$GITHUB_REPO/.claude/settings.json" -o .claude/settings.json
 
-print_status "Setting up git hooks..."
+print_status "Setting up git hooks using framework templates..."
 
-# Create post-commit hook (triggers after each commit)
-if [ -f ".git/hooks/post-commit" ]; then
-    print_warning "post-commit hook already exists. Creating backup..."
-    cp .git/hooks/post-commit .git/hooks/post-commit.backup
-fi
-
-cat > .git/hooks/post-commit << 'EOF'
-#!/bin/sh
-# Update AI docs after commit if source files were changed
-
-# Read AI docs configuration
-if [ -f ".claude/ai-docs-config.json" ]; then
-    # Extract source directories and file extensions from config
-    SOURCE_DIRS=$(python3 -c "
-import json
-try:
-    with open('.claude/ai-docs-config.json', 'r') as f:
-        config = json.load(f)
-    dirs = config.get('sourceDirectories', ['src/', 'lib/'])
-    print('|'.join([d.rstrip('/') + '/' for d in dirs]))
-except:
-    print('src/|lib/')
-" 2>/dev/null || echo "src/|lib/")
-    
-    FILE_EXTENSIONS=$(python3 -c "
-import json
-try:
-    with open('.claude/ai-docs-config.json', 'r') as f:
-        config = json.load(f)
-    exts = config.get('fileExtensions', ['.js', '.ts', '.py'])
-    print('|'.join([ext.lstrip('.') for ext in exts]))
-except:
-    print('js|ts|py')
-" 2>/dev/null || echo "js|ts|py")
+# Use the manage-hooks.sh script to install hooks
+if [ -f ".claude-docs/manage-hooks.sh" ]; then
+    print_status "Installing git hooks via manage-hooks.sh..."
+    ./.claude-docs/manage-hooks.sh enable
 else
-    # Fallback to generic defaults (covers most common scenarios)
-    SOURCE_DIRS="src/|lib/|app/|components/|pages/|utils/|helpers/|modules/|packages/"
-    FILE_EXTENSIONS="js|ts|jsx|tsx|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h|vue|svelte"
+    print_error "manage-hooks.sh not found. Manual hook installation required."
 fi
-
-# Check if any files in detected source directories with detected extensions changed
-CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-if echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/dev/null 2>&1; then
-    echo "Source files were modified in last commit. Updating AI documentation..."
-    if command -v claude >/dev/null 2>&1; then
-        # Pass changed files to update command for incremental analysis
-        RELEVANT_FILES=$(echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" | tr '\n' ',' | sed 's/,$//')
-        claude -p "Run /update-ai-docs --changed-files='$RELEVANT_FILES'" || echo "Failed to update docs"
-        
-        # Check if docs were actually updated
-        if [ -n "$(git status --porcelain ai_docs/)" ]; then
-            echo "AI documentation was updated. Creating documentation commit..."
-            git add ai_docs/
-            git commit -m "docs: Auto-update AI documentation
-
-Generated from commit $(git rev-parse HEAD~1 | cut -c1-7)
-Modified files: $RELEVANT_FILES" || echo "Failed to commit docs"
-        else
-            echo "No documentation changes needed."
-        fi
-    else
-        echo "Claude CLI not found. Skipping doc update."
-    fi
-else
-    echo "No source files modified in last commit. Skipping documentation update."
-fi
-EOF
-
-chmod +x .git/hooks/post-commit
-
-# Also create pre-push hook as a fallback
-if [ -f ".git/hooks/pre-push" ]; then
-    print_warning "pre-push hook already exists. Creating backup..."
-    cp .git/hooks/pre-push .git/hooks/pre-push.backup
-fi
-
-cat > .git/hooks/pre-push << 'EOF'
-#!/bin/sh
-# Fallback: Update AI docs before push if not already done
-
-# Read AI docs configuration
-if [ -f ".claude/ai-docs-config.json" ]; then
-    SOURCE_DIRS=$(python3 -c "
-import json
-try:
-    with open('.claude/ai-docs-config.json', 'r') as f:
-        config = json.load(f)
-    dirs = config.get('sourceDirectories', ['src/', 'lib/'])
-    print('|'.join([d.rstrip('/') + '/' for d in dirs]))
-except:
-    print('src/|lib/')
-" 2>/dev/null || echo "src/|lib/")
-    
-    FILE_EXTENSIONS=$(python3 -c "
-import json
-try:
-    with open('.claude/ai-docs-config.json', 'r') as f:
-        config = json.load(f)
-    exts = config.get('fileExtensions', ['.js', '.ts', '.py'])
-    print('|'.join([ext.lstrip('.') for ext in exts]))
-except:
-    print('js|ts|py')
-" 2>/dev/null || echo "js|ts|py")
-else
-    # Fallback to generic defaults (covers most common scenarios)
-    SOURCE_DIRS="src/|lib/|app/|components/|pages/|utils/|helpers/|modules/|packages/"
-    FILE_EXTENSIONS="js|ts|jsx|tsx|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h|vue|svelte"
-fi
-
-# Check if docs are up to date
-if [ -z "$(git log --oneline -1 | grep 'docs: Auto-update AI documentation')" ]; then
-    if git diff --name-only HEAD~5..HEAD | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/dev/null 2>&1; then
-        echo "Source files were modified recently but docs may not be up to date. Updating..."
-        if command -v claude >/dev/null 2>&1; then
-            RECENT_FILES=$(git diff --name-only HEAD~5..HEAD | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" | tr '\n' ',' | sed 's/,$//')
-            claude -p "Run /update-ai-docs --changed-files='$RECENT_FILES'" || echo "Failed to update docs"
-            if [ -n "$(git status --porcelain ai_docs/)" ]; then
-                echo "Documentation was updated. Please commit and push again."
-                exit 1
-            fi
-        fi
-    fi
-fi
-EOF
-
-chmod +x .git/hooks/pre-push
 
 print_status "Creating GitHub Actions workflow template..."
 mkdir -p .github/workflows
@@ -448,10 +339,11 @@ fi
 print_status "✅ Installation complete!"
 echo ""
 echo "🎉 Next steps:"
-echo "1. Review and customize: .claude/ai-docs-config.json (optional but recommended)"
+echo "1. Review and customize: .claude-docs/config.json (optional but recommended)"
 echo "2. Run: claude -p 'Run /init-ai-docs' to initialize documentation"
-echo "3. Verify installation: ls -la .claude/"
+echo "3. Verify installation: ls -la .claude/ .claude-docs/"
 echo "4. Check your first AI documentation: cat ai_docs/README.md"
+echo "5. Manage hooks: ./.claude-docs/manage-hooks.sh status"
 echo ""
 echo "📚 Available commands:"
 echo "- claude -p 'Run /init-ai-docs'     # Initialize documentation"
@@ -461,9 +353,10 @@ echo "- npm run docs:update                      # Alternative npm script"
 echo ""
 echo "🔧 Features enabled:"
 echo "- ✅ Custom Claude commands"
-echo "- ✅ Git hooks for auto-updates"
+echo "- ✅ Git hooks for auto-updates (managed via .claude-docs/manage-hooks.sh)"
 echo "- ✅ GitHub Actions workflow"
 echo "- ✅ NPM scripts (if package.json exists)"
 echo "- ✅ Claude hooks for real-time updates"
+echo "- ✅ Framework configuration system (.claude-docs/config.json)"
 echo ""
 print_status "Happy documenting! 🚀"

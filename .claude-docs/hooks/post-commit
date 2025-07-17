@@ -1,0 +1,76 @@
+#!/bin/sh
+# AI Documentation Framework - Post-commit Hook
+# Updates AI documentation after commit if source files were changed
+
+# Read AI docs configuration
+if [ -f ".claude-docs/config.json" ]; then
+    # Extract source directories and file extensions from config
+    SOURCE_DIRS=$(python3 -c "
+import json
+try:
+    with open('.claude-docs/config.json', 'r') as f:
+        config = json.load(f)
+    dirs = config.get('sourceDirectories', ['src/', 'lib/'])
+    print('|'.join([d.rstrip('/') + '/' for d in dirs]))
+except:
+    print('src/|lib/')
+" 2>/dev/null || echo "src/|lib/")
+    
+    FILE_EXTENSIONS=$(python3 -c "
+import json
+try:
+    with open('.claude-docs/config.json', 'r') as f:
+        config = json.load(f)
+    exts = config.get('fileExtensions', ['.js', '.ts', '.py'])
+    print('|'.join([ext.lstrip('.') for ext in exts]))
+except:
+    print('js|ts|py')
+" 2>/dev/null || echo "js|ts|py")
+
+    # Check if framework is enabled
+    ENABLED=$(python3 -c "
+import json
+try:
+    with open('.claude-docs/config.json', 'r') as f:
+        config = json.load(f)
+    print('true' if config.get('enabled', True) else 'false')
+except:
+    print('true')
+" 2>/dev/null || echo "true")
+
+    if [ "$ENABLED" != "true" ]; then
+        echo "AI documentation framework is disabled. Skipping documentation update."
+        exit 0
+    fi
+else
+    # Fallback to generic defaults (covers most common scenarios)
+    SOURCE_DIRS="src/|lib/|app/|components/|pages/|utils/|helpers/|modules/|packages/"
+    FILE_EXTENSIONS="js|ts|jsx|tsx|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h|vue|svelte"
+fi
+
+# Check if any files in configured source directories with configured extensions changed
+CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+if echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/dev/null 2>&1; then
+    echo "Source files were modified in last commit. Updating AI documentation..."
+    if command -v claude >/dev/null 2>&1; then
+        # Pass changed files to update command for incremental analysis
+        RELEVANT_FILES=$(echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" | tr '\n' ',' | sed 's/,$//')
+        claude -p "Run /update-ai-docs --changed-files='$RELEVANT_FILES'" || echo "Failed to update docs"
+        
+        # Check if docs were actually updated
+        if [ -n "$(git status --porcelain ai_docs/)" ]; then
+            echo "AI documentation was updated. Creating documentation commit..."
+            git add ai_docs/
+            git commit -m "docs: Auto-update AI documentation
+
+Generated from commit $(git rev-parse HEAD~1 | cut -c1-7)
+Modified files: $RELEVANT_FILES" || echo "Failed to commit docs"
+        else
+            echo "No documentation changes needed."
+        fi
+    else
+        echo "Claude CLI not found. Skipping doc update."
+    fi
+else
+    echo "No source files modified in last commit. Skipping documentation update."
+fi

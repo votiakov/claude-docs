@@ -5,7 +5,7 @@ Initialize comprehensive AI-optimized documentation for the project.
 ## Workflow
 
 1. **Load project configuration and assess codebase**:
-   - Read `.claude/ai-docs-config.json` to understand project structure
+   - Read `.claude-docs/config.json` to understand project structure
    - Use configured source directories and file extensions for targeted analysis
    - If config doesn't exist, use generic patterns for common frameworks
    - Count files in relevant directories for complexity assessment
@@ -187,7 +187,7 @@ Initialize comprehensive AI-optimized documentation for the project.
 - Use framework-specific analysis patterns when available for more accurate results
 - Coordinate agent outputs to ensure consistency and avoid duplication
 - Use the most appropriate number of agents based on codebase size assessment
-- Configuration in `.claude/ai-docs-config.json` enables faster incremental updates
+- Configuration in `.claude-docs/config.json` enables faster incremental updates
 
 ## Usage
 Run: `/init-ai-docs`
