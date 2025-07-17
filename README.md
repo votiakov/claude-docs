@@ -108,9 +108,9 @@ ai_docs/
 ### Git Hooks
 
 The framework automatically sets up git hooks to:
-- Update documentation before pushing changes
-- Commit documentation updates automatically
-- Detect code changes and trigger updates
+- **post-commit**: Update documentation after each commit that modifies source files
+- **pre-push**: Fallback check to ensure documentation is up to date before pushing
+- Automatically create documentation commits when changes are detected
 
 ### GitHub Actions
 
@@ -147,27 +147,22 @@ ls ai_docs/
 
 ## Configuration
 
-### Claude Settings
+### Git Hooks Integration
 
-The framework creates `.claude/settings.json` with:
+The framework sets up git hooks to automatically update documentation when source files are modified:
 
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|MultiEdit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo 'Hook triggered for file modification' && if git diff --name-only 2>/dev/null | grep -E '\\.(js|ts|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h)$' >/dev/null 2>&1; then echo 'Code files detected, updating AI docs...' && claude -p 'Run /update-ai-docs' || echo 'Failed to update docs'; else echo 'No code files modified'; fi"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+**Post-commit hook** (`.git/hooks/post-commit`):
+- Triggers after each commit
+- Checks if source files were modified in the commit
+- Updates AI documentation automatically
+- Creates a separate documentation commit
+
+**Pre-push hook** (`.git/hooks/pre-push`):
+- Fallback to catch any missed documentation updates
+- Prevents push if documentation is out of sync
+- Ensures documentation is always up to date before sharing
+
+This approach is more comprehensive than Claude Code hooks because it captures **all** file modifications, not just those made through Claude Code itself.
 
 ### Supported File Types
 

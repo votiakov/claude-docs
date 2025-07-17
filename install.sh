@@ -50,23 +50,59 @@ fi
 curl -sSL "$GITHUB_REPO/.claude/settings.json" -o .claude/settings.json
 
 print_status "Setting up git hooks..."
+
+# Create post-commit hook (triggers after each commit)
+if [ -f ".git/hooks/post-commit" ]; then
+    print_warning "post-commit hook already exists. Creating backup..."
+    cp .git/hooks/post-commit .git/hooks/post-commit.backup
+fi
+
+cat > .git/hooks/post-commit << 'EOF'
+#!/bin/sh
+# Update AI docs after commit if source files were changed
+if git diff --name-only HEAD~1 HEAD | grep -E '\.(js|ts|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h)$' >/dev/null 2>&1; then
+    echo "Source files were modified in last commit. Updating AI documentation..."
+    if command -v claude >/dev/null 2>&1; then
+        claude -p "Run /update-ai-docs" || echo "Failed to update docs"
+        # Check if docs were actually updated
+        if [ -n "$(git status --porcelain ai_docs/)" ]; then
+            echo "AI documentation was updated. Creating documentation commit..."
+            git add ai_docs/
+            git commit -m "docs: Auto-update AI documentation
+
+Generated from commit $(git rev-parse HEAD~1 | cut -c1-7)" || echo "Failed to commit docs"
+        else
+            echo "No documentation changes needed."
+        fi
+    else
+        echo "Claude CLI not found. Skipping doc update."
+    fi
+else
+    echo "No source files modified in last commit. Skipping documentation update."
+fi
+EOF
+
+chmod +x .git/hooks/post-commit
+
+# Also create pre-push hook as a fallback
 if [ -f ".git/hooks/pre-push" ]; then
     print_warning "pre-push hook already exists. Creating backup..."
     cp .git/hooks/pre-push .git/hooks/pre-push.backup
 fi
 
-# Create pre-push hook
 cat > .git/hooks/pre-push << 'EOF'
 #!/bin/sh
-# Update AI docs before push
-if git diff --cached --name-only | grep -E '\.(js|ts|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h)$'; then
-    echo "Updating AI documentation before push..."
-    if command -v claude >/dev/null 2>&1; then
-        claude -p "Run /update-ai-docs" || echo "Failed to update docs"
-        git add ai_docs/ 2>/dev/null || true
-        git commit -m "docs: Auto-update AI documentation" || true
-    else
-        echo "Claude CLI not found. Skipping doc update."
+# Fallback: Update AI docs before push if not already done
+if [ -z "$(git log --oneline -1 | grep 'docs: Auto-update AI documentation')" ]; then
+    if git diff --name-only HEAD~5..HEAD | grep -E '\.(js|ts|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h)$' >/dev/null 2>&1; then
+        echo "Source files were modified recently but docs may not be up to date. Updating..."
+        if command -v claude >/dev/null 2>&1; then
+            claude -p "Run /update-ai-docs" || echo "Failed to update docs"
+            if [ -n "$(git status --porcelain ai_docs/)" ]; then
+                echo "Documentation was updated. Please commit and push again."
+                exit 1
+            fi
+        fi
     fi
 fi
 EOF
