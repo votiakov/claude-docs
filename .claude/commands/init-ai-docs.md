@@ -130,7 +130,7 @@ Initialize comprehensive AI-optimized documentation for the project.
          - uses: actions/checkout@v3
          - name: Update AI Docs
            run: |
-             npx claude -p "Run /project:update-ai-docs to update documentation"
+             npx claude --permission-mode acceptEdits "Run /project:update-ai-docs to update documentation"
          - name: Commit changes
            run: |
              git config --local user.email "action@github.com"
@@ -145,8 +145,8 @@ Initialize comprehensive AI-optimized documentation for the project.
    ```json
    {
      "scripts": {
-       "docs:init": "claude -p 'Run /init-ai-docs'",
-       "docs:update": "claude -p 'Run /update-ai-docs'",
+       "docs:init": "claude --permission-mode acceptEdits 'Run /init-ai-docs'",
+       "docs:update": "claude --permission-mode acceptEdits 'Run /update-ai-docs'",
        "docs:lint": "markdownlint ai_docs/**/*.md"
      }
    }

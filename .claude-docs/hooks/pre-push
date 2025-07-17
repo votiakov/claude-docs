@@ -90,7 +90,7 @@ if [ -z "$(echo "$LAST_COMMIT_MSG" | grep 'docs: Auto-update AI documentation')"
         # Check if ai_docs directory exists
         if [ ! -d "ai_docs" ]; then
             info_log "ai_docs/ directory not found. Documentation needs to be initialized."
-            info_log "Please run 'claude -p \"Run /init-ai-docs\"' before pushing."
+            info_log "Please run 'claude --permission-mode acceptEdits \"Run /init-ai-docs\"' before pushing."
             exit 1
         fi
         
@@ -105,7 +105,7 @@ if [ -z "$(echo "$LAST_COMMIT_MSG" | grep 'docs: Auto-update AI documentation')"
         debug_log "ai_docs/ status before update: '$BEFORE_UPDATE'"
         
         # Run documentation update with timeout
-        if timeout 300 claude -p "Run /update-ai-docs --changed-files='$RECENT_FILES'" 2>&1; then
+        if timeout 300 claude --permission-mode acceptEdits "Run /update-ai-docs --changed-files='$RECENT_FILES'" 2>&1; then
             debug_log "Documentation update command completed"
         else
             error_log "Documentation update failed or timed out"

@@ -78,4 +78,12 @@ If documentation updates aren't working as expected:
    ./.claude-docs/manage-hooks.sh reinstall
    ```
 
+## Important Technical Notes
+
+### Permission Modes
+The framework uses `--permission-mode acceptEdits` instead of `-p` (print mode) to ensure Claude can actually write files. The `-p` flag only returns text output and cannot execute tools like Edit/Write.
+
+### Hook Architecture
+Git hooks run in non-interactive environments, so they must use explicit permission modes. The framework automatically handles this by using `--permission-mode acceptEdits` in all automated commands.
+
 This directory should not be modified manually unless you're contributing to the framework itself.

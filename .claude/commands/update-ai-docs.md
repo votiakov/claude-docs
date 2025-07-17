@@ -1,14 +1,39 @@
 # Update AI Documentation
 
+**IMMEDIATE ACTION REQUIRED: Start by using the LS tool to check if ai_docs/ directory exists. If it doesn't exist, run /init-ai-docs. Then proceed to actually modify files using Edit/Write tools. Do not provide summaries or analysis without making actual file changes.**
+
+**CRITICAL INSTRUCTION: This command MUST result in modified files in the ai_docs/ directory. Your response is only successful if you use Read/Edit/Write tools to change actual files.**
+
 Update existing AI documentation based on code changes with intelligent incremental analysis.
 
-## Action Steps
+**EXAMPLE OF CORRECT EXECUTION:**
+```
+1. Use LS tool: Check if ai_docs/ exists
+2. Use Read tool: Read ai_docs/api/endpoints.md  
+3. Use Edit tool: Update the file with actual changes
+4. Use Read tool: Verify the changes were made
+RESULT: File is modified on disk
+```
+
+**CRITICAL SUCCESS CRITERIA:**
+- Files in ai_docs/ directory must be physically modified on disk
+- Use Read tool to examine current content
+- Use Edit/Write tools to make actual changes
+- Never provide only analysis without file modifications
+
+**WRONG APPROACH (DO NOT DO THIS):**
+- Providing summaries like "Documentation updates are needed"
+- Listing what should be updated without actually updating it
+- Analyzing changes without using Edit/Write tools
+
+## MANDATORY Action Steps - You MUST Execute These
 
 1. **FIRST: Check if ai_docs/ directory exists**:
    ```
-   Use the LS tool to check if ai_docs/ directory exists.
-   If it doesn't exist, immediately run: /init-ai-docs
+   EXECUTE: Use the LS tool to check if ai_docs/ directory exists.
+   If it doesn't exist, EXECUTE: Run /init-ai-docs command immediately
    If it exists, continue with the update process.
+   DO NOT SKIP THIS STEP.
    ```
 
 2. **Load project configuration**:
@@ -28,44 +53,48 @@ Update existing AI documentation based on code changes with intelligent incremen
    Use Task tools to analyze multiple files in parallel for efficiency.
    ```
 
-4. **CRITICAL: Actually update documentation files using Write/Edit tools**:
+4. **CRITICAL: Actually update documentation files using Write/Edit tools - NO EXCEPTIONS**:
    
-   **For API/endpoint changes:**
+   **For API/endpoint changes (EXECUTE ALL STEPS):**
    ```
-   Use the Read tool to examine ai_docs/api/endpoints.md
-   Use the Edit tool to update endpoint documentation with new/modified endpoints
-   Use the Read tool to examine ai_docs/api/schemas.md
-   Use the Edit tool to update data models if they changed
-   Use the Read tool to examine ai_docs/api/examples.md
-   Use the Edit tool to add new usage examples
-   ```
-   
-   **For component/feature changes:**
-   ```
-   Use the LS tool to check ai_docs/features/ directory structure
-   Use the Read tool to examine existing feature documentation
-   Use the Edit tool to update implementation details in relevant files
-   Use the Write tool to create new feature documentation if needed
+   STEP 1: EXECUTE Read tool on ai_docs/api/endpoints.md
+   STEP 2: EXECUTE Edit tool to update endpoint documentation with changes
+   STEP 3: EXECUTE Read tool on ai_docs/api/schemas.md (if exists)
+   STEP 4: EXECUTE Edit tool to update data models if they changed
+   STEP 5: EXECUTE Read tool on ai_docs/api/examples.md (if exists)
+   STEP 6: EXECUTE Edit tool to add new usage examples
+   VERIFICATION: Use Read tool to confirm changes were written
    ```
    
-   **For configuration changes:**
+   **For component/feature changes (EXECUTE ALL STEPS):**
    ```
-   Use the Read tool to examine ai_docs/setup/configuration.md
-   Use the Edit tool to update configuration documentation
-   Use the Read tool to examine ai_docs/setup/installation.md
-   Use the Edit tool to update installation steps if needed
-   Use the Read tool to examine ai_docs/architecture/tech_stack.md
-   Use the Edit tool to update technology stack if dependencies changed
+   STEP 1: EXECUTE LS tool on ai_docs/features/ directory
+   STEP 2: EXECUTE Read tool on existing feature documentation files
+   STEP 3: EXECUTE Edit tool to update implementation details
+   STEP 4: EXECUTE Write tool to create new feature files if needed
+   VERIFICATION: Use Read tool to confirm all changes were written
    ```
    
-   **For architectural changes:**
+   **For configuration changes (EXECUTE ALL STEPS):**
    ```
-   Use the Read tool to examine ai_docs/architecture/overview.md
-   Use the Edit tool to update system architecture documentation
-   Use the Read tool to examine ai_docs/architecture/components.md
-   Use the Edit tool to modify component descriptions
-   Use the Read tool to examine ai_docs/project_context.md
-   Use the Edit tool to update project context if major changes occurred
+   STEP 1: EXECUTE Read tool on ai_docs/setup/configuration.md
+   STEP 2: EXECUTE Edit tool to update configuration documentation
+   STEP 3: EXECUTE Read tool on ai_docs/setup/installation.md
+   STEP 4: EXECUTE Edit tool to update installation steps if needed
+   STEP 5: EXECUTE Read tool on ai_docs/architecture/tech_stack.md
+   STEP 6: EXECUTE Edit tool to update technology stack
+   VERIFICATION: Use Read tool to confirm all changes were written
+   ```
+   
+   **For architectural changes (EXECUTE ALL STEPS):**
+   ```
+   STEP 1: EXECUTE Read tool on ai_docs/architecture/overview.md
+   STEP 2: EXECUTE Edit tool to update system architecture documentation
+   STEP 3: EXECUTE Read tool on ai_docs/architecture/components.md
+   STEP 4: EXECUTE Edit tool to modify component descriptions
+   STEP 5: EXECUTE Read tool on ai_docs/project_context.md
+   STEP 6: EXECUTE Edit tool to update project context
+   VERIFICATION: Use Read tool to confirm all changes were written
    ```
 
 5. **MANDATORY: Use Task agents for parallel processing**:
@@ -107,9 +136,20 @@ Update existing AI documentation based on code changes with intelligent incremen
 4. Use Task tools to launch parallel agents for efficiency
 5. Verify that files were actually written using Read tool
 
-**Success means:** Documentation files are actually updated on disk, not just analyzed.
+**CRITICAL SUCCESS REQUIREMENT:** Documentation files MUST be physically modified on disk using Edit/Write tools. 
+
+**FAILURE INDICATORS:**
+- Only providing text summaries or analysis
+- Not using Read/Edit/Write tools
+- Not verifying changes were written
+- Saying "updates are needed" without making them
+
+**SUCCESS INDICATORS:**
+- Edit/Write tools were used on specific files
+- Read tool confirms changes are present
+- Specific files show modifications when checked
 
 ## Usage Examples
-- `claude -p "Run /update-ai-docs --changed-files='src/api/users.js,src/components/UserList.jsx'"` (incremental)
-- `claude -p "Run /update-ai-docs api/users"` (manual feature update)
-- `claude -p "Run /update-ai-docs"` (full analysis - fallback mode)
+- `claude --permission-mode acceptEdits "Run /update-ai-docs --changed-files='src/api/users.js,src/components/UserList.jsx'"` (incremental)
+- `claude --permission-mode acceptEdits "Run /update-ai-docs api/users"` (manual feature update)
+- `claude --permission-mode acceptEdits "Run /update-ai-docs"` (full analysis - fallback mode)

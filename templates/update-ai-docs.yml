@@ -36,10 +36,10 @@ jobs:
           # Check if ai_docs directory exists
           if [ ! -d "ai_docs" ]; then
             echo "Initializing AI documentation..."
-            claude -p "Run /init-ai-docs"
+            claude --permission-mode acceptEdits "Run /init-ai-docs"
           else
             echo "Updating AI documentation..."
-            claude -p "Run /update-ai-docs"
+            claude --permission-mode acceptEdits "Run /update-ai-docs"
           fi
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
