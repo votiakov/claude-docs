@@ -1,18 +1,9 @@
 {
-  "hooks": [
-    {
-      "event": "PostToolUse",
-      "script": ".claude/hooks/update-docs.sh",
-      "description": "Update AI docs after file modifications",
-      "condition": "tool.name === 'str_replace' || tool.name === 'write_file'"
-    },
-    {
-      "event": "Stop",
-      "script": ".claude/hooks/commit-docs.sh",
-      "description": "Commit documentation updates",
-      "condition": "filesModified > 0"
+  "hooks": {
+    "PostToolUse": {
+      "Edit|MultiEdit|Write": "if git diff --name-only | grep -E '\\.(js|ts|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h)$'; then echo 'Code files modified, updating AI docs...'; claude -p 'Run /update-ai-docs' || echo 'Failed to update docs'; fi"
     }
-  ],
+  },
   "projectSettings": {
     "aiDocsEnabled": true,
     "autoUpdateDocs": true,

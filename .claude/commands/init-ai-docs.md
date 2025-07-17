@@ -139,8 +139,8 @@ Initialize comprehensive AI-optimized documentation for the project.
    ```json
    {
      "scripts": {
-       "docs:init": "claude -p 'Run /project:init-ai-docs'",
-       "docs:update": "claude -p 'Run /project:update-ai-docs'",
+       "docs:init": "claude -p 'Run /init-ai-docs'",
+       "docs:update": "claude -p 'Run /update-ai-docs'",
        "docs:lint": "markdownlint ai_docs/**/*.md"
      }
    }
@@ -152,7 +152,7 @@ Initialize comprehensive AI-optimized documentation for the project.
    
    This project includes AI-optimized documentation in the `ai_docs/` folder.
    
-   - To update docs: Run `/project:update-ai-docs`
+   - To update docs: Run `/update-ai-docs`
    - Docs auto-update on commits to main branch
    - Each file is self-contained for AI comprehension
    ```

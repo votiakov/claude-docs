@@ -153,13 +153,11 @@ The framework creates `.claude/settings.json` with:
 
 ```json
 {
-  "hooks": [
-    {
-      "event": "PostToolUse",
-      "script": ".claude/hooks/update-docs.sh",
-      "description": "Update AI docs after file modifications"
+  "hooks": {
+    "PostToolUse": {
+      "Edit|MultiEdit|Write": "if git diff --name-only | grep -E '\\.(js|ts|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h)$'; then echo 'Code files modified, updating AI docs...'; claude -p 'Run /update-ai-docs' || echo 'Failed to update docs'; fi"
     }
-  ],
+  },
   "projectSettings": {
     "aiDocsEnabled": true,
     "autoUpdateDocs": true,
@@ -228,9 +226,6 @@ your-project/
 │   ├── commands/
 │   │   ├── init-ai-docs.md
 │   │   └── update-ai-docs.md
-│   ├── hooks/
-│   │   ├── update-docs.sh
-│   │   └── commit-docs.sh
 │   └── settings.json
 ├── .github/
 │   └── workflows/

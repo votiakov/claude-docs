@@ -36,18 +36,11 @@ fi
 GITHUB_REPO="https://raw.githubusercontent.com/votiakov/claude-docs/main"
 
 print_status "Creating Claude command directories..."
-mkdir -p .claude/commands .claude/hooks
+mkdir -p .claude/commands
 
 print_status "Downloading command files..."
 curl -sSL "$GITHUB_REPO/.claude/commands/init-ai-docs.md" -o .claude/commands/init-ai-docs.md
 curl -sSL "$GITHUB_REPO/.claude/commands/update-ai-docs.md" -o .claude/commands/update-ai-docs.md
-
-print_status "Downloading hook scripts..."
-curl -sSL "$GITHUB_REPO/.claude/hooks/update-docs.sh" -o .claude/hooks/update-docs.sh
-curl -sSL "$GITHUB_REPO/.claude/hooks/commit-docs.sh" -o .claude/hooks/commit-docs.sh
-
-print_status "Making hooks executable..."
-chmod +x .claude/hooks/*.sh
 
 print_status "Downloading settings.json..."
 if [ -f ".claude/settings.json" ]; then
