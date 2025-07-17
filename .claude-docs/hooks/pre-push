@@ -104,27 +104,62 @@ if [ -z "$(echo "$LAST_COMMIT_MSG" | grep 'docs: Auto-update AI documentation')"
         BEFORE_UPDATE=$(git status --porcelain ai_docs/ 2>/dev/null || echo "")
         debug_log "ai_docs/ status before update: '$BEFORE_UPDATE'"
         
-        # Run documentation update with timeout
-        if timeout 300 claude --permission-mode acceptEdits --print "Run /update-ai-docs --changed-files='$RECENT_FILES'" 2>&1; then
-            debug_log "Documentation update command completed"
+        # Capture timing for pre-push updates
+        START_TIME=$(date +%s)
+        
+        # Run documentation update with timeout, capture output
+        CLAUDE_OUTPUT_FILE=$(mktemp)
+        CLAUDE_SUCCESS=false
+        
+        if timeout 600 claude --permission-mode acceptEdits --print "Run /update-ai-docs --changed-files='$RECENT_FILES'" > "$CLAUDE_OUTPUT_FILE" 2>&1; then
+            CLAUDE_SUCCESS=true
+            debug_log "Documentation update command completed successfully"
         else
-            error_log "Documentation update failed or timed out"
-            exit 1
+            CLAUDE_EXIT_CODE=$?
+            if [ $CLAUDE_EXIT_CODE -eq 124 ]; then
+                info_log "Documentation update timed out, checking for partial results..."
+            else
+                info_log "Documentation update failed with exit code $CLAUDE_EXIT_CODE, checking for partial results..."
+            fi
         fi
         
-        # Check if docs were updated
+        # Calculate execution time
+        END_TIME=$(date +%s)
+        EXECUTION_TIME=$((END_TIME - START_TIME))
+        debug_log "Claude execution took $EXECUTION_TIME seconds"
+        
+        # Show Claude output in debug mode
+        if [ "$DEBUG" = "1" ]; then
+            debug_log "Claude output:"
+            cat "$CLAUDE_OUTPUT_FILE" >&2
+        fi
+        
+        # Clean up temp file
+        rm -f "$CLAUDE_OUTPUT_FILE"
+        
+        # Check if docs were updated (regardless of command success)
         AFTER_UPDATE=$(git status --porcelain ai_docs/ 2>/dev/null || echo "")
         debug_log "ai_docs/ status after update: '$AFTER_UPDATE'"
         
         if [ -n "$AFTER_UPDATE" ]; then
-            error_log "Documentation was updated but not committed."
+            # Files were updated - prevent push until committed
+            if [ "$CLAUDE_SUCCESS" = "true" ]; then
+                error_log "Documentation was updated successfully but not committed."
+            else
+                error_log "Documentation was updated (despite timeout/errors) but not committed."
+            fi
             info_log "Please commit the documentation changes and push again:"
             info_log "  git add ai_docs/"
             info_log "  git commit -m 'docs: Update AI documentation'"
             info_log "  git push"
             exit 1
         else
-            debug_log "No documentation changes were made, proceeding with push"
+            # No files updated
+            if [ "$CLAUDE_SUCCESS" = "true" ]; then
+                debug_log "No documentation changes were needed, proceeding with push"
+            else
+                info_log "Documentation update failed but no changes detected, proceeding with push"
+            fi
         fi
     else
         debug_log "No relevant source files changed recently, proceeding with push"

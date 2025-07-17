@@ -87,10 +87,23 @@ if echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/de
     if [ ! -d "ai_docs" ]; then
         info_log "ai_docs/ directory not found. Initializing documentation..."
         debug_log "Running: claude --permission-mode acceptEdits --print 'Run /init-ai-docs'"
-        if claude --permission-mode acceptEdits --print "Run /init-ai-docs" 2>&1; then
-            info_log "Documentation initialized successfully."
+        
+        # Run init with extended timeout since it does more work
+        INIT_START_TIME=$(date +%s)
+        if timeout 900 claude --permission-mode acceptEdits --print "Run /init-ai-docs" 2>&1; then
+            INIT_END_TIME=$(date +%s)
+            INIT_TIME=$((INIT_END_TIME - INIT_START_TIME))
+            info_log "Documentation initialized successfully in ${INIT_TIME} seconds."
         else
-            error_log "Failed to initialize documentation. Please run 'claude --permission-mode acceptEdits --print \"Run /init-ai-docs\"' manually."
+            INIT_EXIT_CODE=$?
+            INIT_END_TIME=$(date +%s)
+            INIT_TIME=$((INIT_END_TIME - INIT_START_TIME))
+            if [ $INIT_EXIT_CODE -eq 124 ]; then
+                error_log "Documentation initialization timed out after ${INIT_TIME} seconds (15 min limit)."
+            else
+                error_log "Failed to initialize documentation after ${INIT_TIME} seconds."
+            fi
+            error_log "Please run 'claude --permission-mode acceptEdits --print \"Run /init-ai-docs\"' manually."
             exit 1
         fi
     else
@@ -109,28 +122,64 @@ if echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/de
     info_log "Running documentation update for files: $RELEVANT_FILES"
     debug_log "Command: claude --permission-mode acceptEdits --print \"Run /update-ai-docs --changed-files='$RELEVANT_FILES'\""
     
+    # Capture start time for timing
+    START_TIME=$(date +%s)
+    
+    # Run claude with timeout, but capture output and exit status
+    CLAUDE_OUTPUT_FILE=$(mktemp)
+    CLAUDE_SUCCESS=false
+    
     # Run claude with timeout to prevent hanging
-    if timeout 300 claude --permission-mode acceptEdits --print "Run /update-ai-docs --changed-files='$RELEVANT_FILES'" 2>&1; then
+    if timeout 600 claude --permission-mode acceptEdits --print "Run /update-ai-docs --changed-files='$RELEVANT_FILES'" > "$CLAUDE_OUTPUT_FILE" 2>&1; then
+        CLAUDE_SUCCESS=true
         debug_log "Documentation update command completed successfully"
     else
-        error_log "Documentation update command failed or timed out (5 minutes)"
-        exit 1
+        CLAUDE_EXIT_CODE=$?
+        if [ $CLAUDE_EXIT_CODE -eq 124 ]; then
+            info_log "Documentation update command timed out after 10 minutes, but checking for partial results..."
+        else
+            info_log "Documentation update command failed with exit code $CLAUDE_EXIT_CODE, but checking for partial results..."
+        fi
     fi
     
-    # Check if docs were actually updated
+    # Calculate execution time
+    END_TIME=$(date +%s)
+    EXECUTION_TIME=$((END_TIME - START_TIME))
+    debug_log "Claude execution took $EXECUTION_TIME seconds"
+    
+    # Show Claude output in debug mode
+    if [ "$DEBUG" = "1" ]; then
+        debug_log "Claude output:"
+        cat "$CLAUDE_OUTPUT_FILE" >&2
+    fi
+    
+    # Check if docs were actually updated (regardless of timeout/error)
     AFTER_UPDATE=$(git status --porcelain ai_docs/ 2>/dev/null || echo "")
     debug_log "ai_docs/ status after update: '$AFTER_UPDATE'"
     
+    # Clean up temp file
+    rm -f "$CLAUDE_OUTPUT_FILE"
+    
+    # Determine overall success/failure and commit changes
     if [ -n "$AFTER_UPDATE" ]; then
-        info_log "AI documentation was updated. Creating documentation commit..."
+        # Files were updated - this is success regardless of timeout
+        if [ "$CLAUDE_SUCCESS" = "true" ]; then
+            info_log "AI documentation was updated successfully. Creating documentation commit..."
+            STATUS_MSG="Successfully updated"
+        else
+            info_log "AI documentation was updated (despite timeout/errors). Creating documentation commit..."
+            STATUS_MSG="Updated with timeout/errors (${EXECUTION_TIME}s)"
+        fi
+        
         git add ai_docs/
         
         # Create detailed commit message
         COMMIT_HASH=$(git rev-parse HEAD~1 | cut -c1-7)
         COMMIT_MSG="docs: Auto-update AI documentation
 
+$STATUS_MSG in ${EXECUTION_TIME} seconds
 Generated from commit $COMMIT_HASH
-Modified files: $RELEVANT_FILES
+Modified source files: $RELEVANT_FILES
 
 Changed documentation files:"
         
@@ -141,13 +190,23 @@ Changed documentation files:"
         
         if git commit -m "$COMMIT_MSG" 2>&1; then
             info_log "Documentation commit created successfully"
+            # Overall success since files were updated and committed
+            exit 0
         else
             error_log "Failed to commit documentation changes"
             exit 1
         fi
     else
-        info_log "No documentation changes detected after update command"
-        debug_log "This might indicate the update command didn't write any files"
+        # No files were updated - this is a real failure
+        if [ "$CLAUDE_SUCCESS" = "true" ]; then
+            info_log "Claude completed successfully but no documentation changes were detected"
+            debug_log "This might indicate no updates were needed, or the update command didn't write files"
+            exit 0
+        else
+            error_log "Documentation update failed: Claude command failed AND no files were updated"
+            debug_log "Command took ${EXECUTION_TIME} seconds before failing"
+            exit 1
+        fi
     fi
 else
     debug_log "No source files modified in last commit. Skipping documentation update."

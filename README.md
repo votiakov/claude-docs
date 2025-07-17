@@ -263,10 +263,14 @@ git commit -m "test: debug hook execution"
 ```
 
 **Q: Want to test the entire setup**
-A: Run the built-in test script:
+A: Run the built-in test scripts:
 ```bash
-./.claude-docs/test-hooks.sh
+./.claude-docs/test-hooks.sh           # Test overall setup
+./.claude-docs/test-timeout-logic.sh   # Test timeout handling
 ```
+
+**Q: Hook times out but files are updated**
+A: This is normal behavior! The improved hooks will automatically commit any documentation updates even if Claude times out. Check git log for auto-commit messages with timing information.
 
 **Q: Claude commands not found**
 A: Ensure Claude CLI is installed and commands are in `.claude/commands/`:

@@ -41,6 +41,13 @@ Testing and debugging script for the framework. Features:
 - Validates hook syntax
 - Provides debugging guidance
 
+### test-timeout-logic.sh
+Tests the improved timeout and error handling logic. Validates:
+- Successful execution with file updates
+- Timeout scenarios with partial results
+- Complete failure scenarios
+- Auto-commit logic under different conditions
+
 ### hooks/
 Template files for git hooks that are installed into `.git/hooks/` when enabled.
 
@@ -89,5 +96,13 @@ This ensures Claude can actually write files while running non-interactively in 
 
 ### Hook Architecture
 Git hooks run in non-interactive environments, so they must use explicit permission modes. The framework automatically handles this by using `--permission-mode acceptEdits --print` in all automated commands.
+
+#### Timeout and Error Handling
+The hooks include robust timeout and error handling:
+- **10-minute timeout** for updates, 15-minute for initialization
+- **Smart success detection**: Checks for file changes even if Claude times out
+- **Auto-commit logic**: Commits documentation updates even after timeouts if files were changed
+- **Detailed logging**: Shows execution time, exit codes, and file changes
+- **Graceful degradation**: Only fails if both Claude fails AND no files were updated
 
 This directory should not be modified manually unless you're contributing to the framework itself.
