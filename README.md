@@ -154,14 +154,17 @@ The framework creates `.claude/settings.json` with:
 ```json
 {
   "hooks": {
-    "PostToolUse": {
-      "Edit|MultiEdit|Write": "if git diff --name-only | grep -E '\\.(js|ts|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h)$'; then echo 'Code files modified, updating AI docs...'; claude -p 'Run /update-ai-docs' || echo 'Failed to update docs'; fi"
-    }
-  },
-  "projectSettings": {
-    "aiDocsEnabled": true,
-    "autoUpdateDocs": true,
-    "documentationPaths": ["ai_docs/"]
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Hook triggered for file modification' && if git diff --name-only 2>/dev/null | grep -E '\\.(js|ts|py|java|rb|go|php|c|cpp|cs|rs|swift|kt|scala|clj|ex|erl|pl|r|m|h)$' >/dev/null 2>&1; then echo 'Code files detected, updating AI docs...' && claude -p 'Run /update-ai-docs' || echo 'Failed to update docs'; else echo 'No code files modified'; fi"
+          }
+        ]
+      }
+    ]
   }
 }
 ```
