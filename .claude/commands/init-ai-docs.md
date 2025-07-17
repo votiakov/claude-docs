@@ -4,8 +4,11 @@ Initialize comprehensive AI-optimized documentation for the project.
 
 ## Workflow
 
-1. Assess codebase size and create the ai_docs directory structure:
-   - Check total file count and project complexity
+1. **Load project configuration and assess codebase**:
+   - Read `.claude/ai-docs-config.json` to understand project structure
+   - Use configured source directories and file extensions for targeted analysis
+   - If config doesn't exist, use generic patterns for common frameworks
+   - Count files in relevant directories for complexity assessment
    - For large codebases (>500 files): Use 5-7 parallel agents
    - For medium codebases (100-500 files): Use 3-5 parallel agents
    - For small codebases (<100 files): Use 2-3 parallel agents
@@ -18,22 +21,25 @@ Initialize comprehensive AI-optimized documentation for the project.
      - ai_docs/troubleshooting/
      - ai_docs/code_patterns/
 
-2. Analyze the entire codebase using parallel sub-agents for efficiency:
+2. **Analyze codebase using project-aware intelligence**:
    - Use Task tool to launch multiple agents simultaneously for different analysis areas
-   - Agent 1: Analyze project structure, main components, and file organization
-   - Agent 2: Identify technology stack, dependencies, and build configuration
-   - Agent 3: Discover key features and functionality patterns
-   - Agent 4: Map API endpoints, data models, and external integrations
-   - Agent 5: Extract common patterns, conventions, and architectural decisions
+   - Focus analysis on configured source directories (or generic patterns if no config)
+   - Use framework-specific analysis patterns when framework is known
+   - Agent 1: Analyze project structure using configured directories and file patterns
+   - Agent 2: Technology stack analysis using configuration or auto-detection
+   - Agent 3: Feature discovery focused on configured source files and patterns  
+   - Agent 4: API/endpoint mapping using framework-specific or generic patterns
+   - Agent 5: Code conventions and patterns from configured file types
 
-3. Generate comprehensive documentation using parallel sub-agents for different sections:
+3. **Generate framework-aware documentation using parallel sub-agents**:
    - Use Task tool to create documentation sections simultaneously (launch 3-5 agents)
-   - Agent A: Create project_context.md, architecture/overview.md, and architecture/tech_stack.md
-   - Agent B: Generate all API documentation (endpoints.md, schemas.md, examples.md)
-   - Agent C: Create setup documentation (installation.md, configuration.md) and troubleshooting
-   - Agent D: Generate feature documentation for each major feature found
-   - Agent E: Create code patterns and conventions documentation
-   - Coordinate between agents to ensure consistency and cross-references
+   - Use detected framework information to generate appropriate documentation structure
+   - Agent A: Create project_context.md with detected framework info, architecture/overview.md with framework-specific diagrams, and architecture/tech_stack.md with actual dependencies
+   - Agent B: Generate API documentation using framework-specific patterns (REST for Express, GraphQL for Apollo, etc.)
+   - Agent C: Create setup documentation tailored to detected framework (npm/yarn for Node.js, pip for Python, etc.)
+   - Agent D: Generate feature documentation based on detected source structure and common patterns
+   - Agent E: Create code patterns and conventions documentation based on actual file patterns found
+   - Coordinate between agents to ensure consistency and framework-appropriate cross-references
 
    **ai_docs/README.md:**
    - Overview of the AI documentation structure
@@ -168,11 +174,20 @@ Initialize comprehensive AI-optimized documentation for the project.
    fi
    ```
 
+7. **Complete initialization**:
+   - Ensure all documentation sections are generated
+   - Validate cross-references and internal links
+   - Add timestamps to generated documentation
+   - Framework is ready for incremental updates via git hooks
+
 ## Performance Notes
 - Always use parallel Task agents for large codebases to maximize efficiency
 - Launch multiple agents simultaneously in a single response for optimal performance
+- Focus analysis on configured source directories for better performance
+- Use framework-specific analysis patterns when available for more accurate results
 - Coordinate agent outputs to ensure consistency and avoid duplication
 - Use the most appropriate number of agents based on codebase size assessment
+- Configuration in `.claude/ai-docs-config.json` enables faster incremental updates
 
 ## Usage
 Run: `/init-ai-docs`

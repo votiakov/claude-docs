@@ -137,32 +137,56 @@ jobs:
 # 1. Install the framework in your project directory
 curl -sSL https://raw.githubusercontent.com/votiakov/claude-docs/main/install.sh | bash
 
-# 2. Initialize documentation
+# 2. Customize configuration (optional but recommended)
+# Edit .claude/ai-docs-config.json to match your project structure
+
+# 3. Initialize documentation
 claude -p "Run /init-ai-docs"
 
-# 3. Your ai_docs/ folder is now populated with comprehensive documentation!
+# 4. Your ai_docs/ folder is now populated with comprehensive documentation!
 ls ai_docs/
 # README.md  project_context.md  architecture/  features/  api/  setup/  troubleshooting/  code_patterns/
 ```
 
 ## Configuration
 
+### Project Configuration
+
+After installation, customize `.claude/ai-docs-config.json` to match your project:
+
+```json
+{
+  "sourceDirectories": ["src/", "lib/", "components/"],
+  "fileExtensions": [".js", ".ts", ".jsx", ".tsx"],
+  "ignorePatterns": ["node_modules/", "dist/", "build/", ".git/"],
+  "framework": "react-typescript"
+}
+```
+
+**Configuration Fields:**
+- `sourceDirectories`: Directories containing your source code
+- `fileExtensions`: File types to monitor for changes
+- `ignorePatterns`: Directories/files to ignore during analysis
+- `framework`: Detected framework for context-aware documentation
+
+**Note:** If this config file doesn't exist, the framework uses generic fallbacks covering most common project structures.
+
 ### Git Hooks Integration
 
-The framework sets up git hooks to automatically update documentation when source files are modified:
+The framework sets up intelligent git hooks that use your configuration:
 
 **Post-commit hook** (`.git/hooks/post-commit`):
 - Triggers after each commit
-- Checks if source files were modified in the commit
-- Updates AI documentation automatically
+- Checks if files in configured source directories were modified
+- Only monitors configured file extensions
+- Updates AI documentation automatically for relevant changes
 - Creates a separate documentation commit
 
 **Pre-push hook** (`.git/hooks/pre-push`):
 - Fallback to catch any missed documentation updates
+- Uses same configuration to detect relevant changes
 - Prevents push if documentation is out of sync
 - Ensures documentation is always up to date before sharing
-
-This approach is more comprehensive than Claude Code hooks because it captures **all** file modifications, not just those made through Claude Code itself.
 
 ### Supported File Types
 
@@ -224,6 +248,7 @@ your-project/
 │   ├── commands/
 │   │   ├── init-ai-docs.md
 │   │   └── update-ai-docs.md
+│   ├── ai-docs-config.json      # ← Project-specific configuration
 │   └── settings.json
 ├── .github/
 │   └── workflows/
