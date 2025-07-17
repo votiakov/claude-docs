@@ -2,6 +2,26 @@
 # AI Documentation Framework - Post-commit Hook
 # Updates AI documentation after commit if source files were changed
 
+# Enable debugging (set to 1 to enable verbose output)
+DEBUG=${AI_DOCS_DEBUG:-0}
+
+# Debug logging function
+debug_log() {
+    if [ "$DEBUG" = "1" ]; then
+        echo "[DEBUG] $1" >&2
+    fi
+}
+
+# Error logging function
+error_log() {
+    echo "[ERROR] $1" >&2
+}
+
+# Info logging function
+info_log() {
+    echo "[AI-DOCS] $1"
+}
+
 # Read AI docs configuration
 if [ -f ".claude-docs/config.json" ]; then
     # Extract source directories and file extensions from config
@@ -50,27 +70,85 @@ fi
 
 # Check if any files in configured source directories with configured extensions changed
 CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-if echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/dev/null 2>&1; then
-    echo "Source files were modified in last commit. Updating AI documentation..."
-    if command -v claude >/dev/null 2>&1; then
-        # Pass changed files to update command for incremental analysis
-        RELEVANT_FILES=$(echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" | tr '\n' ',' | sed 's/,$//')
-        claude -p "Run /update-ai-docs --changed-files='$RELEVANT_FILES'" || echo "Failed to update docs"
-        
-        # Check if docs were actually updated
-        if [ -n "$(git status --porcelain ai_docs/)" ]; then
-            echo "AI documentation was updated. Creating documentation commit..."
-            git add ai_docs/
-            git commit -m "docs: Auto-update AI documentation
+debug_log "Changed files: $CHANGED_FILES"
+debug_log "Source dirs pattern: $SOURCE_DIRS"
+debug_log "File extensions pattern: $FILE_EXTENSIONS"
 
-Generated from commit $(git rev-parse HEAD~1 | cut -c1-7)
-Modified files: $RELEVANT_FILES" || echo "Failed to commit docs"
+if echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/dev/null 2>&1; then
+    info_log "Source files were modified in last commit. Updating AI documentation..."
+    
+    # Check if Claude CLI is available
+    if ! command -v claude >/dev/null 2>&1; then
+        error_log "Claude CLI not found. Please install Claude CLI to enable automatic documentation updates."
+        exit 0
+    fi
+    
+    # Check if ai_docs directory exists
+    if [ ! -d "ai_docs" ]; then
+        info_log "ai_docs/ directory not found. Initializing documentation..."
+        debug_log "Running: claude -p 'Run /init-ai-docs'"
+        if claude -p "Run /init-ai-docs" 2>&1; then
+            info_log "Documentation initialized successfully."
         else
-            echo "No documentation changes needed."
+            error_log "Failed to initialize documentation. Please run 'claude -p \"Run /init-ai-docs\"' manually."
+            exit 1
         fi
     else
-        echo "Claude CLI not found. Skipping doc update."
+        debug_log "ai_docs/ directory exists, proceeding with incremental update"
+    fi
+    
+    # Get list of relevant changed files
+    RELEVANT_FILES=$(echo "$CHANGED_FILES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" | tr '\n' ',' | sed 's/,$//')
+    debug_log "Relevant files: $RELEVANT_FILES"
+    
+    # Capture ai_docs state before update
+    BEFORE_UPDATE=$(git status --porcelain ai_docs/ 2>/dev/null || echo "")
+    debug_log "ai_docs/ status before update: '$BEFORE_UPDATE'"
+    
+    # Run the documentation update command
+    info_log "Running documentation update for files: $RELEVANT_FILES"
+    debug_log "Command: claude -p \"Run /update-ai-docs --changed-files='$RELEVANT_FILES'\""
+    
+    # Run claude with timeout to prevent hanging
+    if timeout 300 claude -p "Run /update-ai-docs --changed-files='$RELEVANT_FILES'" 2>&1; then
+        debug_log "Documentation update command completed successfully"
+    else
+        error_log "Documentation update command failed or timed out (5 minutes)"
+        exit 1
+    fi
+    
+    # Check if docs were actually updated
+    AFTER_UPDATE=$(git status --porcelain ai_docs/ 2>/dev/null || echo "")
+    debug_log "ai_docs/ status after update: '$AFTER_UPDATE'"
+    
+    if [ -n "$AFTER_UPDATE" ]; then
+        info_log "AI documentation was updated. Creating documentation commit..."
+        git add ai_docs/
+        
+        # Create detailed commit message
+        COMMIT_HASH=$(git rev-parse HEAD~1 | cut -c1-7)
+        COMMIT_MSG="docs: Auto-update AI documentation
+
+Generated from commit $COMMIT_HASH
+Modified files: $RELEVANT_FILES
+
+Changed documentation files:"
+        
+        # Add list of changed documentation files
+        echo "$AFTER_UPDATE" | while read -r status file; do
+            COMMIT_MSG="$COMMIT_MSG\n- $file ($status)"
+        done
+        
+        if git commit -m "$COMMIT_MSG" 2>&1; then
+            info_log "Documentation commit created successfully"
+        else
+            error_log "Failed to commit documentation changes"
+            exit 1
+        fi
+    else
+        info_log "No documentation changes detected after update command"
+        debug_log "This might indicate the update command didn't write any files"
     fi
 else
-    echo "No source files modified in last commit. Skipping documentation update."
+    debug_log "No source files modified in last commit. Skipping documentation update."
 fi

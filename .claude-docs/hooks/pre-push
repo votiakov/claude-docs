@@ -2,6 +2,26 @@
 # AI Documentation Framework - Pre-push Hook
 # Fallback: Update AI docs before push if not already done
 
+# Enable debugging (set to 1 to enable verbose output)
+DEBUG=${AI_DOCS_DEBUG:-0}
+
+# Debug logging function
+debug_log() {
+    if [ "$DEBUG" = "1" ]; then
+        echo "[DEBUG] $1" >&2
+    fi
+}
+
+# Error logging function
+error_log() {
+    echo "[ERROR] $1" >&2
+}
+
+# Info logging function
+info_log() {
+    echo "[AI-DOCS] $1"
+}
+
 # Read AI docs configuration
 if [ -f ".claude-docs/config.json" ]; then
     SOURCE_DIRS=$(python3 -c "
@@ -48,16 +68,67 @@ else
 fi
 
 # Check if docs are up to date
-if [ -z "$(git log --oneline -1 | grep 'docs: Auto-update AI documentation')" ]; then
-    if git diff --name-only HEAD~5..HEAD | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/dev/null 2>&1; then
-        echo "Source files were modified recently but docs may not be up to date. Updating..."
-        if command -v claude >/dev/null 2>&1; then
-            RECENT_FILES=$(git diff --name-only HEAD~5..HEAD | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" | tr '\n' ',' | sed 's/,$//')
-            claude -p "Run /update-ai-docs --changed-files='$RECENT_FILES'" || echo "Failed to update docs"
-            if [ -n "$(git status --porcelain ai_docs/)" ]; then
-                echo "Documentation was updated. Please commit and push again."
-                exit 1
-            fi
+LAST_COMMIT_MSG=$(git log --oneline -1)
+debug_log "Last commit message: $LAST_COMMIT_MSG"
+
+if [ -z "$(echo "$LAST_COMMIT_MSG" | grep 'docs: Auto-update AI documentation')" ]; then
+    debug_log "Last commit was not a documentation update, checking for recent source changes"
+    
+    RECENT_CHANGES=$(git diff --name-only HEAD~5..HEAD)
+    debug_log "Recent changes (last 5 commits): $RECENT_CHANGES"
+    
+    if echo "$RECENT_CHANGES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" >/dev/null 2>&1; then
+        info_log "Source files were modified recently but docs may not be up to date. Checking..."
+        
+        # Check if Claude CLI is available
+        if ! command -v claude >/dev/null 2>&1; then
+            error_log "Claude CLI not found. Cannot update documentation automatically."
+            info_log "Please install Claude CLI or update documentation manually before pushing."
+            exit 1
         fi
+        
+        # Check if ai_docs directory exists
+        if [ ! -d "ai_docs" ]; then
+            info_log "ai_docs/ directory not found. Documentation needs to be initialized."
+            info_log "Please run 'claude -p \"Run /init-ai-docs\"' before pushing."
+            exit 1
+        fi
+        
+        # Get relevant files and try to update docs
+        RECENT_FILES=$(echo "$RECENT_CHANGES" | grep -E "^($SOURCE_DIRS).*\.($FILE_EXTENSIONS)$" | tr '\n' ',' | sed 's/,$//')
+        debug_log "Relevant recent files: $RECENT_FILES"
+        
+        info_log "Attempting to update documentation for recent changes..."
+        
+        # Capture ai_docs state before update
+        BEFORE_UPDATE=$(git status --porcelain ai_docs/ 2>/dev/null || echo "")
+        debug_log "ai_docs/ status before update: '$BEFORE_UPDATE'"
+        
+        # Run documentation update with timeout
+        if timeout 300 claude -p "Run /update-ai-docs --changed-files='$RECENT_FILES'" 2>&1; then
+            debug_log "Documentation update command completed"
+        else
+            error_log "Documentation update failed or timed out"
+            exit 1
+        fi
+        
+        # Check if docs were updated
+        AFTER_UPDATE=$(git status --porcelain ai_docs/ 2>/dev/null || echo "")
+        debug_log "ai_docs/ status after update: '$AFTER_UPDATE'"
+        
+        if [ -n "$AFTER_UPDATE" ]; then
+            error_log "Documentation was updated but not committed."
+            info_log "Please commit the documentation changes and push again:"
+            info_log "  git add ai_docs/"
+            info_log "  git commit -m 'docs: Update AI documentation'"
+            info_log "  git push"
+            exit 1
+        else
+            debug_log "No documentation changes were made, proceeding with push"
+        fi
+    else
+        debug_log "No relevant source files changed recently, proceeding with push"
     fi
+else
+    debug_log "Last commit was a documentation update, proceeding with push"
 fi

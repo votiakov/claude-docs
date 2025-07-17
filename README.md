@@ -254,6 +254,20 @@ A: Check git hooks status and reinstall if needed:
 ./.claude-docs/manage-hooks.sh reinstall
 ```
 
+**Q: Hook seems to hang or not write files**
+A: Enable debugging to see what's happening:
+```bash
+export AI_DOCS_DEBUG=1
+# Then make a commit to trigger the hook
+git commit -m "test: debug hook execution"
+```
+
+**Q: Want to test the entire setup**
+A: Run the built-in test script:
+```bash
+./.claude-docs/test-hooks.sh
+```
+
 **Q: Claude commands not found**
 A: Ensure Claude CLI is installed and commands are in `.claude/commands/`:
 ```bash
